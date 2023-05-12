@@ -1,0 +1,62 @@
+.DS_Store
+#*.orig
+#
+# Eclipse project files
+#
+.classpath
+.project
+.settings*/
+.springBeans
+.repository
+MANIFEST.MF
+bin*/
+war*/
+build
+.gradle
+
+#
+# IntelliJ IDEA project files
+#
+.idea*/
+*.ipr
+*.iml
+*.iws
+*.ids
+*.deb
+classes*/
+out*/
+gen-external-apklibs*/
+
+#ignore NetBeans project files
+nb-configuration.xml
+profiles.xml
+catalog.xml
+nbactions.xml
+
+#ignore some temporary files
+*.vpp~*
+
+#ignore thumbnails created by windows
+Thumbs.db
+
+#ignore some log files
+script/*.log
+importStations/*.log
+
+*.backup
+atlassian-ide-plugin.xml
+
+
+#ignore Xcode system files
+*.xcuserstate
+
+@ignore reviewboardrc
+*.reviewboardrc
+
+#py
+*.pycs
+
+#maven
+target
+
+.vscode

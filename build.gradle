@@ -1,0 +1,144 @@
+plugins {
+    id 'checkstyle'
+    id 'java-library'
+    id 'signing'
+    id 'maven-publish'
+    id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+group = 'com.github.germanosin'
+version = file('VERSION').text
+
+ext {
+    env = findProperty('env') ?: 'dev'
+}
+
+
+dependencies {
+    implementation "org.apache.kafka:kafka-clients:$kafkaVersion"
+    implementation "org.slf4j:slf4j-api:$slfjVersion"
+    implementation "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+
+    compileOnly "org.projectlombok:lombok:$lombokVersion"
+    annotationProcessor "org.projectlombok:lombok:$lombokVersion"
+
+
+    testAnnotationProcessor "org.projectlombok:lombok:$lombokVersion"
+    testCompileOnly "org.projectlombok:lombok:$lombokVersion"
+    testImplementation "org.awaitility:awaitility:4.2.0"
+
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.18.1"))
+    testImplementation "org.slf4j:slf4j-simple:$slfjVersion"
+    testImplementation "org.testcontainers:testcontainers"
+    testImplementation "org.testcontainers:kafka"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+checkstyle {
+    configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+    ignoreFailures = false
+    maxWarnings = 0
+}
+
+task sourceJar(type: Jar, dependsOn: classes) {
+    archiveClassifier = "sources"
+    from sourceSets.main.allJava
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = "javadoc"
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourceJar, javadocJar
+}
+
+if (env == 'prod') {
+    signing {
+        sign(publishing.publications)
+    }
+}
+
+publishing {
+    if (env == 'prod') {
+        repositories {
+            maven {
+                url "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2"
+                credentials {
+                    username sonatypeUsername
+                    password sonatypePassword
+                }
+            }
+        }
+    }
+
+    publications {
+        maven(MavenPublication) {
+            groupId = 'com.github.germanosin'
+            artifactId = 'kafka-leader-election'
+            version = version
+
+            from components.java
+
+            artifact(sourceJar) {
+                classifier = 'sources'
+            }
+
+            artifact(javadocJar) {
+                classifier = 'javadoc'
+            }
+
+            pom {
+                name = 'Kafka Leader Election'
+                description = 'Kafka Leader Election for Java'
+                url = 'https://github.com/germanosin/kafka-leader-election'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'gosin'
+                        name = 'German Osin'
+                        organization = 'German Osin'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/germanosin/kafka-leader-election.git'
+                    developerConnection = 'scm:git:git://github.com/germanosin/kafka-leader-election.git'
+                    url = 'https://github.com/germanosin/kafka-leader-election'
+                }
+            }
+        }
+    }
+}
+
+if (env == 'prod') {
+    nexusPublishing {
+        repositories {
+            sonatype {
+                nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
+                snapshotRepositoryUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+
+                username = sonatypeUsername
+                password = sonatypePassword
+            }
+        }
+    }
+}
