@@ -75,7 +75,7 @@ KafkaLeaderProperties
 
 ## License
 
-kafka-leader-election is released under the Apache 2 License. See the [LICENSE](link_to_license) file for more details.
+kafka-leader-election is released under the Apache 2 License. See the [LICENSE](https://github.com/germanosin/kafka-leader-election/blob/main/LICENSE) file for more details.
 
 ## Support
 
