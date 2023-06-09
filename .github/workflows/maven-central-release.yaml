@@ -1,0 +1,46 @@
+name: Maven Central release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_and_publish_package:
+    name: Build and publish maven packages
+    runs-on: ubuntu-latest
+    concurrency: publishing
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2
+
+      - name: Bump package version
+        run: |
+          docker run --rm \
+            -v $PWD:/src \
+            -w /src \
+            tomologic/bumpversion --current-version $(cat VERSION) patch VERSION
+
+      - name: Deserialize secret key from base64
+        run: |
+          echo '${{ secrets.SIGNING_SECRET_KEY }}' > /tmp/secret_key_base64
+          base64 -d /tmp/secret_key_base64 > /tmp/secret_key.gpg
+
+      - name: Build and publish maven package
+        run: ./gradlew --no-daemon
+          -PsonatypeUsername=${{ secrets.SONATYPE_USERNAME }}
+          -PsonatypePassword=${{ secrets.SONATYPE_PASSWORD }}
+          -Psigning.keyId=${{ secrets.SIGNING_KEY_ID }}
+          -Psigning.password="${{ secrets.SIGNING_PASSWORD }}"
+          -Psigning.secretKeyRingFile=/tmp/secret_key.gpg
+          -Penv=prod
+          clean publishToSonatype closeAndReleaseSonatypeStagingRepository
+
+      - name: Update repository with up-to-date submodules and version
+        run: |
+          git config --global user.email "german.osin@gmail.com"
+          git config --global user.name "German Osin"
+          if [ -n "$(git status --porcelain)" ]
+          then
+            git add .
+            git commit -m "Bump package version"
+            git push origin main
+          fi
